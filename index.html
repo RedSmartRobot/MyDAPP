@@ -1141,30 +1141,71 @@ function closeSaveModal() {
   document.getElementById('saveModal').classList.remove('open');
 }
 
-function saveHtmlFile() {
+async function saveHtmlFile() {
   const filename = (document.getElementById('saveFilename').value.trim() || 'my-dapp') + '.html';
-  const abiStr = JSON.stringify(currentAbi).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
-  const addrStr = currentAddress;
+  const saveBtn = document.querySelector('.btn-save');
+  saveBtn.disabled = true;
+  saveBtn.textContent = '⏳ Bundling...';
 
-  // Inject pre-loaded state into a copy of this page
-  const pageSource = document.documentElement.outerHTML;
-  const injectedScript = `
+  try {
+    // Fetch ethers.js to embed inline (so the saved file works without a server)
+    const ethersUrl = 'https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js';
+    let ethersCode = '';
+    try {
+      const resp = await fetch(ethersUrl);
+      ethersCode = await resp.text();
+    } catch(e) {
+      toast('Could not fetch ethers.js. Are you online? The saved file may not work offline.', 'error');
+    }
+
+    // Fetch Google Fonts CSS to embed (fallback to system fonts if offline)
+    const fontsUrl = 'https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap';
+    let fontsCSS = '';
+    try {
+      const resp = await fetch(fontsUrl);
+      fontsCSS = await resp.text();
+    } catch(e) { /* fonts optional */ }
+
+    // Pre-loaded contract state injected at DOMContentLoaded
+    const injectedScript = `
 <script>
 window.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('contractAddress').value = ${JSON.stringify(addrStr)};
+  document.getElementById('contractAddress').value = ${JSON.stringify(currentAddress)};
   document.getElementById('contractAbi').value = ${JSON.stringify(JSON.stringify(currentAbi))};
 });
 <\/script>`;
 
-  const blob = new Blob([pageSource.replace('</head>', injectedScript + '</head>')], {type: 'text/html'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-  closeSaveModal();
-  toast(`Saved as ${filename}!`, 'success');
+    let pageSource = document.documentElement.outerHTML;
+
+    // Replace CDN ethers.js <script> tag with inlined version
+    pageSource = pageSource.replace(
+      /<script src="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/ethers\/[^"]+"><\/script>/,
+      ethersCode ? `<script>${ethersCode}<\/script>` : ''
+    );
+
+    // Replace Google Fonts <link> with inlined CSS
+    pageSource = pageSource.replace(
+      /<link href="https:\/\/fonts\.googleapis\.com[^"]*"[^>]*>/,
+      fontsCSS ? `<style>${fontsCSS}<\/style>` : ''
+    );
+
+    // Inject pre-loaded state
+    pageSource = pageSource.replace('</head>', injectedScript + '</head>');
+
+    const blob = new Blob([pageSource], {type: 'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    closeSaveModal();
+    toast(`Saved as ${filename} — works offline by double-click!`, 'success');
+
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = '⬇ Download HTML';
+  }
 }
 
 // ────────────────────────────────────────────────
