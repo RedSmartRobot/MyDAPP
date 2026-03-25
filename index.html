@@ -7,207 +7,203 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:#0a0a0f;--surface:#13131c;--surface2:#1c1c2e;--border:#2a2a40;
-    --accent:#7c6aff;--accent2:#ff6a9c;--accent3:#6affe8;
-    --text:#e8e8f0;--text-dim:#7070a0;--text-dimmer:#40405a;
-    --read-color:#6affe8;--write-color:#ff9f6a;--payable-color:#ffd76a;
-    --success:#6affa0;--error:#ff6a6a;
-    --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--radius:8px;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
-  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,106,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,106,255,0.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
-  body::after{content:'';position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(124,106,255,0.12) 0%,transparent 70%);pointer-events:none;z-index:0;animation:orb-drift 20s ease-in-out infinite alternate;}
-  @keyframes orb-drift{from{transform:translate(0,0);}to{transform:translate(300px,150px);}}
+:root{--bg:#0a0a0f;--surface:#13131c;--border:#2a2a40;--accent:#7c6aff;--accent2:#ff6a9c;--accent3:#6affe8;--text:#e8e8f0;--text-dim:#7070a0;--text-dimmer:#40405a;--read:#6affe8;--write:#ff9f6a;--pay:#ffd76a;--ok:#6affa0;--err:#ff6a6a;--mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--r:8px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,106,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,106,255,.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(124,106,255,.12),transparent 70%);pointer-events:none;z-index:0;animation:drift 20s ease-in-out infinite alternate;}
+@keyframes drift{to{transform:translate(300px,150px);}}
 
-  header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--border);backdrop-filter:blur(12px);background:rgba(10,10,15,0.8);position:sticky;top:0;z-index:10;}
-  .logo{font-family:var(--mono);font-size:18px;color:var(--accent);display:flex;align-items:center;gap:10px;}
-  .logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;}
-  .wallet-section{display:flex;align-items:center;gap:10px;}
-  .network-badge{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(124,106,255,0.12);border:1px solid rgba(124,106,255,0.3);color:var(--accent);display:none;}
-  .network-badge.wrong{color:var(--accent2);border-color:rgba(255,106,156,0.4);background:rgba(255,106,156,0.08);}
-  #walletAddress{font-family:var(--mono);font-size:12px;color:var(--accent3);padding:6px 12px;background:rgba(106,255,232,0.08);border:1px solid rgba(106,255,232,0.2);border-radius:20px;display:none;cursor:pointer;transition:background 0.2s;}
-  #walletAddress:hover{background:rgba(106,255,232,0.15);}
-  #connectBtn{font-family:var(--mono);font-size:12px;padding:8px 18px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;transition:all 0.2s;letter-spacing:0.05em;}
-  #connectBtn:hover{background:rgba(124,106,255,0.15);box-shadow:0 0 20px rgba(124,106,255,0.3);}
-  #connectBtn.connected{border-color:var(--accent3);color:var(--accent3);}
-  #connectBtn.connected:hover{background:rgba(106,255,232,0.1);}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid var(--border);background:rgba(10,10,15,.85);backdrop-filter:blur(12px);position:sticky;top:0;z-index:10;}
+.logo{font-family:var(--mono);font-size:17px;color:var(--accent);display:flex;align-items:center;gap:10px;}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:6px;display:grid;place-items:center;font-size:13px;}
+.wsec{display:flex;align-items:center;gap:10px;}
 
-  main{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:48px 24px;}
-  .hero{text-align:center;margin-bottom:48px;}
-  .hero-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent2);margin-bottom:16px;}
-  .hero h1{font-family:var(--mono);font-size:clamp(28px,5vw,48px);font-weight:700;line-height:1.15;background:linear-gradient(135deg,var(--text) 0%,var(--accent) 50%,var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px;}
-  .hero p{font-size:15px;color:var(--text-dim);max-width:500px;margin:0 auto;line-height:1.7;}
+#netBadge{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(124,106,255,.12);border:1px solid rgba(124,106,255,.3);color:var(--accent);display:none;}
+#netBadge.wrong{color:var(--accent2);border-color:rgba(255,106,156,.4);background:rgba(255,106,156,.08);}
+#walletAddr{font-family:var(--mono);font-size:12px;color:var(--accent3);padding:6px 12px;background:rgba(106,255,232,.08);border:1px solid rgba(106,255,232,.2);border-radius:20px;display:none;cursor:pointer;}
+#walletAddr:hover{background:rgba(106,255,232,.18);}
+#connectBtn{font-family:var(--mono);font-size:12px;padding:8px 18px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;letter-spacing:.05em;transition:all .2s;}
+#connectBtn:hover{background:rgba(124,106,255,.15);box-shadow:0 0 20px rgba(124,106,255,.3);}
+#connectBtn.on{border-color:var(--accent3);color:var(--accent3);}
+#connectBtn:disabled{opacity:.5;cursor:not-allowed;}
 
-  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
-  .panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
-  .panel-title{font-family:var(--mono);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:20px;display:flex;align-items:center;gap:8px;}
-  .panel-title::after{content:'';flex:1;height:1px;background:var(--border);}
+main{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:48px 24px;}
+.hero{text-align:center;margin-bottom:44px;}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent2);margin-bottom:14px;}
+h1{font-family:var(--mono);font-size:clamp(26px,5vw,46px);font-weight:700;line-height:1.15;background:linear-gradient(135deg,var(--text),var(--accent) 50%,var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:10px;}
+.sub{font-size:15px;color:var(--text-dim);max-width:500px;margin:0 auto;line-height:1.7;}
 
-  label{display:block;font-size:12px;font-weight:500;color:var(--text-dim);margin-bottom:8px;font-family:var(--mono);letter-spacing:0.05em;}
-  input[type="text"],textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:13px;padding:12px 14px;transition:border-color 0.2s,box-shadow 0.2s;outline:none;}
-  input[type="text"]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,106,255,0.12);}
-  input[type="text"]::placeholder,textarea::placeholder{color:var(--text-dimmer);}
-  textarea{resize:vertical;min-height:140px;line-height:1.5;}
-  .form-grid{display:grid;gap:16px;margin-bottom:20px;}
-  .abi-hint{font-size:11px;color:var(--text-dimmer);margin-top:6px;font-family:var(--mono);}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.ptitle{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+.ptitle::after{content:'';flex:1;height:1px;background:var(--border);}
+.fgrid{display:grid;gap:16px;margin-bottom:20px;}
+label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:7px;font-family:var(--mono);letter-spacing:.04em;}
+input[type=text],textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:13px;padding:11px 13px;outline:none;transition:border-color .2s,box-shadow .2s;}
+input[type=text]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,106,255,.1);}
+input[type=text]::placeholder,textarea::placeholder{color:var(--text-dimmer);}
+textarea{resize:vertical;min-height:130px;line-height:1.5;}
+.hint{font-size:11px;color:var(--text-dimmer);margin-top:5px;font-family:var(--mono);}
 
-  .btn-primary{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),#9f6aff);border:none;border-radius:var(--radius);color:white;font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:0.08em;cursor:pointer;transition:all 0.25s;}
-  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(124,106,255,0.4);}
-  .btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.btn-pri{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),#9f6aff);border:none;border-radius:var(--r);color:#fff;font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:all .25s;}
+.btn-pri:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(124,106,255,.4);}
+.btn-pri:active{transform:none;}
+.btn-sec{padding:8px 16px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.08em;cursor:pointer;transition:all .2s;}
+.btn-sec:hover{border-color:var(--accent);color:var(--accent);background:rgba(124,106,255,.08);}
 
-  #dappView{display:none;}
-  .dapp-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;gap:16px;}
-  .dapp-title{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;}
-  .dapp-address{font-family:var(--mono);font-size:12px;color:var(--text-dim);word-break:break-all;}
-  .dapp-actions{display:flex;gap:10px;flex-shrink:0;}
-  .btn-outline{padding:8px 16px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:0.08em;cursor:pointer;transition:all 0.2s;}
-  .btn-outline:hover{border-color:var(--accent);color:var(--accent);background:rgba(124,106,255,0.08);}
+#dappView{display:none;}
+.dhead{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap;}
+.dtitle{font-family:var(--mono);font-size:21px;font-weight:700;margin-bottom:5px;}
+.daddr{font-family:var(--mono);font-size:12px;color:var(--text-dim);word-break:break-all;}
+.dacts{display:flex;gap:8px;flex-shrink:0;}
 
-  .tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;}
-  .tab{flex:1;padding:8px 12px;border:none;border-radius:6px;background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:0.08em;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
-  .tab.active{color:var(--text);}
-  .tab.active[data-tab="read"]{background:rgba(106,255,232,0.1);}
-  .tab.active[data-tab="write"]{background:rgba(255,159,106,0.1);}
-  .tab.active[data-tab="all"]{background:rgba(124,106,255,0.1);}
-  .tab-count{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;font-weight:700;}
-  .tab[data-tab="read"] .tab-count{background:rgba(106,255,232,0.15);color:var(--read-color);}
-  .tab[data-tab="write"] .tab-count{background:rgba(255,159,106,0.15);color:var(--write-color);}
+.tabs{display:flex;gap:4px;margin-bottom:18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:4px;}
+.tab{flex:1;padding:8px;border:none;border-radius:6px;background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.tab.on{color:var(--text);}
+.tab.on[data-t=all]{background:rgba(124,106,255,.1);}
+.tab.on[data-t=read]{background:rgba(106,255,232,.1);}
+.tab.on[data-t=write]{background:rgba(255,159,106,.1);}
+.tc{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;font-weight:700;}
+.tab[data-t=all] .tc{background:rgba(124,106,255,.15);color:var(--accent);}
+.tab[data-t=read] .tc{background:rgba(106,255,232,.15);color:var(--read);}
+.tab[data-t=write] .tc{background:rgba(255,159,106,.15);color:var(--write);}
 
-  .functions-list{display:flex;flex-direction:column;gap:12px;}
-  .fn-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-  .fn-card.read-fn{border-left:3px solid var(--read-color);}
-  .fn-card.write-fn{border-left:3px solid var(--write-color);}
-  .fn-card.payable-fn{border-left:3px solid var(--payable-color);}
-  .fn-header{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none;}
-  .fn-type-badge{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 7px;border-radius:4px;font-weight:700;flex-shrink:0;}
-  .read-fn .fn-type-badge{background:rgba(106,255,232,0.1);color:var(--read-color);}
-  .write-fn .fn-type-badge{background:rgba(255,159,106,0.1);color:var(--write-color);}
-  .payable-fn .fn-type-badge{background:rgba(255,215,106,0.1);color:var(--payable-color);}
-  .fn-name{font-family:var(--mono);font-size:14px;font-weight:700;flex:1;}
-  .fn-sig{font-family:var(--mono);font-size:11px;color:var(--text-dimmer);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .fn-chevron{color:var(--text-dimmer);transition:transform 0.2s;font-size:12px;flex-shrink:0;}
-  .fn-card.open .fn-chevron{transform:rotate(180deg);}
-  .fn-body{display:none;padding:0 18px 18px;border-top:1px solid var(--border);}
-  .fn-card.open .fn-body{display:block;}
-  .fn-body-inner{padding-top:16px;display:flex;flex-direction:column;gap:12px;}
-  .fn-input-group label{font-size:11px;margin-bottom:5px;color:var(--text-dim);}
-  .fn-input-group .param-type{font-size:10px;color:var(--text-dimmer);margin-left:6px;}
-  .fn-input-group input[type="text"]{padding:9px 12px;font-size:12px;}
-  .value-input-group{background:rgba(255,215,106,0.05);border:1px solid rgba(255,215,106,0.2);border-radius:var(--radius);padding:12px;}
-  .value-input-group label{color:var(--payable-color);}
-  .fn-call-btn{padding:10px 20px;border:none;border-radius:var(--radius);font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:0.06em;cursor:pointer;transition:all 0.2s;align-self:flex-start;}
-  .read-fn .fn-call-btn{background:rgba(106,255,232,0.1);color:var(--read-color);border:1px solid rgba(106,255,232,0.3);}
-  .read-fn .fn-call-btn:hover{background:rgba(106,255,232,0.2);}
-  .write-fn .fn-call-btn{background:rgba(255,159,106,0.1);color:var(--write-color);border:1px solid rgba(255,159,106,0.3);}
-  .write-fn .fn-call-btn:hover{background:rgba(255,159,106,0.2);}
-  .payable-fn .fn-call-btn{background:rgba(255,215,106,0.1);color:var(--payable-color);border:1px solid rgba(255,215,106,0.3);}
-  .payable-fn .fn-call-btn:hover{background:rgba(255,215,106,0.2);}
-  .fn-call-btn:disabled{opacity:0.4;cursor:not-allowed;}
-  .fn-result{display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.7;word-break:break-all;}
-  .fn-result.visible{display:block;}
-  .fn-result.success{border-color:rgba(106,255,160,0.3);color:var(--success);}
-  .fn-result.error{border-color:rgba(255,106,106,0.3);color:var(--error);}
-  .fn-result.loading{color:var(--text-dim);}
-  .fn-result .result-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:6px;}
-  .tx-link{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);text-decoration:none;margin-top:6px;}
-  .tx-link:hover{text-decoration:underline;}
+.fnlist{display:flex;flex-direction:column;gap:10px;}
+.fncard{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.fncard.rfn{border-left:3px solid var(--read);}
+.fncard.wfn{border-left:3px solid var(--write);}
+.fncard.pfn{border-left:3px solid var(--pay);}
+.fnhdr{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none;}
+.badge{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:4px;font-weight:700;flex-shrink:0;}
+.rfn .badge{background:rgba(106,255,232,.1);color:var(--read);}
+.wfn .badge{background:rgba(255,159,106,.1);color:var(--write);}
+.pfn .badge{background:rgba(255,215,106,.1);color:var(--pay);}
+.fname{font-family:var(--mono);font-size:14px;font-weight:700;flex:1;}
+.fsig{font-family:var(--mono);font-size:11px;color:var(--text-dimmer);flex:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chev{color:var(--text-dimmer);transition:transform .2s;font-size:12px;flex-shrink:0;}
+.fncard.open .chev{transform:rotate(180deg);}
+.fnbody{display:none;padding:0 16px 16px;border-top:1px solid var(--border);}
+.fncard.open .fnbody{display:block;}
+.finner{padding-top:14px;display:flex;flex-direction:column;gap:11px;}
+.pig label{font-size:11px;margin-bottom:4px;color:var(--text-dim);}
+.ptype{font-size:10px;color:var(--text-dimmer);margin-left:5px;}
+.pig input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 11px;outline:none;transition:border-color .2s;}
+.pig input:focus{border-color:var(--accent);}
+.paybox{background:rgba(255,215,106,.05);border:1px solid rgba(255,215,106,.2);border-radius:var(--r);padding:11px;}
+.paybox label{color:var(--pay);}
+.callbtn{padding:9px 18px;border:none;border-radius:var(--r);font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;align-self:flex-start;}
+.rfn .callbtn{background:rgba(106,255,232,.1);color:var(--read);border:1px solid rgba(106,255,232,.3);}
+.rfn .callbtn:hover{background:rgba(106,255,232,.2);}
+.wfn .callbtn{background:rgba(255,159,106,.1);color:var(--write);border:1px solid rgba(255,159,106,.3);}
+.wfn .callbtn:hover{background:rgba(255,159,106,.2);}
+.pfn .callbtn{background:rgba(255,215,106,.1);color:var(--pay);border:1px solid rgba(255,215,106,.3);}
+.pfn .callbtn:hover{background:rgba(255,215,106,.2);}
+.callbtn:disabled{opacity:.4;cursor:not-allowed;}
+.result{display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;font-family:var(--mono);font-size:12px;line-height:1.7;word-break:break-all;}
+.result.show{display:block;}
+.result.ok{border-color:rgba(106,255,160,.3);color:var(--ok);}
+.result.err{border-color:rgba(255,106,106,.3);color:var(--err);}
+.result.loading{color:var(--text-dim);}
+.rlabel{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:5px;}
+.txlink{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);text-decoration:none;margin-top:5px;}
+.txlink:hover{text-decoration:underline;}
 
-  #toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:var(--radius);font-family:var(--mono);font-size:12px;z-index:1000;transform:translateY(100px);opacity:0;transition:all 0.3s;max-width:360px;}
-  #toast.show{transform:translateY(0);opacity:1;}
-  #toast.success{background:rgba(106,255,160,0.1);border:1px solid rgba(106,255,160,0.3);color:var(--success);}
-  #toast.error{background:rgba(255,106,106,0.1);border:1px solid rgba(255,106,106,0.3);color:var(--error);}
-  #toast.info{background:rgba(124,106,255,0.1);border:1px solid rgba(124,106,255,0.3);color:var(--accent);}
+#toast{position:fixed;bottom:24px;right:24px;padding:11px 18px;border-radius:var(--r);font-family:var(--mono);font-size:12px;z-index:1000;transform:translateY(80px);opacity:0;transition:all .3s;max-width:340px;pointer-events:none;}
+#toast.show{transform:translateY(0);opacity:1;}
+#toast.ok{background:rgba(106,255,160,.1);border:1px solid rgba(106,255,160,.3);color:var(--ok);}
+#toast.err{background:rgba(255,106,106,.1);border:1px solid rgba(255,106,106,.3);color:var(--err);}
+#toast.info{background:rgba(124,106,255,.1);border:1px solid rgba(124,106,255,.3);color:var(--accent);}
 
-  .empty-state{text-align:center;padding:40px;color:var(--text-dimmer);font-family:var(--mono);font-size:13px;}
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;}
+#modal.open{display:flex;}
+.mbox{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;max-width:460px;width:90%;}
+.mtitle{font-family:var(--mono);font-size:16px;font-weight:700;margin-bottom:8px;}
+.mdesc{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:20px;}
+.macts{display:flex;gap:10px;justify-content:flex-end;}
+.btn-save{padding:10px 20px;background:linear-gradient(135deg,var(--accent),#9f6aff);border:none;border-radius:var(--r);color:#fff;font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-save:hover{box-shadow:0 4px 20px rgba(124,106,255,.4);}
+.btn-save:disabled{opacity:.5;cursor:not-allowed;}
+.btn-cx{padding:10px 20px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:12px;cursor:pointer;}
 
-  #saveModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;}
-  #saveModal.open{display:flex;}
-  .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;max-width:480px;width:90%;}
-  .modal-title{font-family:var(--mono);font-size:16px;font-weight:700;margin-bottom:8px;}
-  .modal-desc{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:20px;}
-  .modal-actions{display:flex;gap:10px;justify-content:flex-end;}
-  .btn-save{padding:10px 22px;background:linear-gradient(135deg,var(--accent),#9f6aff);border:none;border-radius:var(--radius);color:white;font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;}
-  .btn-save:disabled{opacity:0.5;cursor:not-allowed;}
-  .btn-cancel{padding:10px 22px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:12px;cursor:pointer;}
-
-  .spinner{display:inline-block;width:14px;height:14px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:6px;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  @media(max-width:600px){header{padding:16px;}main{padding:28px 16px;}.dapp-header{flex-direction:column;}.dapp-actions{width:100%;}.dapp-actions button{flex:1;}}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:5px;}
+@keyframes spin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo"><div class="logo-icon">⬡</div>dApp Builder</div>
-  <div class="wallet-section">
-    <span class="network-badge" id="networkBadge"></span>
-    <span id="walletAddress" title="Click to copy full address"></span>
-    <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+  <div class="wsec">
+    <span id="netBadge"></span>
+    <span id="walletAddr"></span>
+    <button id="connectBtn">Connect Wallet</button>
   </div>
 </header>
 
 <main>
-  <!-- SETUP VIEW -->
+  <!-- ── SETUP VIEW ── -->
   <div id="setupView">
     <div class="hero">
-      <div class="hero-eyebrow">Ethereum · Sepolia Testnet</div>
+      <div class="eyebrow">Ethereum · Sepolia Testnet</div>
       <h1>Create your own dApp</h1>
-      <p>Paste any deployed smart contract address and its ABI to instantly generate an interactive interface for reading and writing to the contract.</p>
+      <p class="sub">Paste any smart contract address and its ABI to instantly generate an interactive interface.</p>
     </div>
     <div class="panel">
-      <div class="panel-title">Contract Setup</div>
-      <div class="form-grid">
+      <div class="ptitle">Contract Setup</div>
+      <div class="fgrid">
         <div>
           <label>CONTRACT ADDRESS</label>
-          <input type="text" id="contractAddress" placeholder="0x1234...abcd" spellcheck="false">
+          <input type="text" id="inAddr" placeholder="0x1234…abcd" spellcheck="false" autocomplete="off">
         </div>
         <div>
           <label>CONTRACT ABI (JSON)</label>
-          <textarea id="contractAbi" placeholder='[{"inputs":[],"name":"getValue","outputs":[{"type":"uint256"}],"stateMutability":"view","type":"function"},...]'></textarea>
-          <div class="abi-hint">Paste the full ABI array from Remix, Hardhat, or Etherscan</div>
+          <textarea id="inAbi" placeholder='[{"inputs":[],"name":"getValue","outputs":[{"type":"uint256"}],"stateMutability":"view","type":"function"},…]'></textarea>
+          <div class="hint">Paste the full ABI array from Remix, Hardhat, or Etherscan</div>
         </div>
       </div>
-      <button class="btn-primary" onclick="createDapp()">⬡ Create dApp</button>
+      <button class="btn-pri" id="createBtn">⬡ Create dApp</button>
     </div>
-    <div class="panel" style="border-color:rgba(124,106,255,0.2);">
-      <div class="panel-title">Quick Demo</div>
-      <p style="font-size:13px;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">Don't have a contract handy? Load a sample ERC-20-style ABI to explore the interface.</p>
-      <button class="btn-outline" onclick="loadSample()" style="width:100%;text-align:center;padding:10px;">Load Sample Contract</button>
+    <div class="panel" style="border-color:rgba(124,106,255,.2);">
+      <div class="ptitle">Quick Demo</div>
+      <p style="font-size:13px;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">No contract? Load a sample ERC-20 ABI to try the interface.</p>
+      <button class="btn-sec" id="sampleBtn" style="width:100%;text-align:center;padding:10px;">Load Sample Contract</button>
     </div>
   </div>
 
-  <!-- dAPP VIEW -->
+  <!-- ── dAPP VIEW ── -->
   <div id="dappView">
-    <div class="dapp-header">
-      <div class="dapp-info">
-        <div class="dapp-title" id="dappTitle">Contract dApp</div>
-        <div class="dapp-address" id="dappAddress"></div>
+    <div class="dhead">
+      <div>
+        <div class="dtitle">Contract dApp</div>
+        <div class="daddr" id="daddr"></div>
       </div>
-      <div class="dapp-actions">
-        <button class="btn-outline" onclick="showSaveModal()">⬇ Save dApp</button>
-        <button class="btn-outline" onclick="goBack()">← Back</button>
+      <div class="dacts">
+        <button class="btn-sec" id="saveBtn">⬇ Save dApp</button>
+        <button class="btn-sec" id="backBtn">← Back</button>
       </div>
     </div>
     <div class="tabs">
-      <button class="tab active" data-tab="all" onclick="filterFunctions('all',this)">All <span class="tab-count" id="countAll" style="background:rgba(124,106,255,0.15);color:var(--accent)">0</span></button>
-      <button class="tab" data-tab="read" onclick="filterFunctions('read',this)">Read <span class="tab-count" id="countRead">0</span></button>
-      <button class="tab" data-tab="write" onclick="filterFunctions('write',this)">Write <span class="tab-count" id="countWrite">0</span></button>
+      <button class="tab on" data-t="all">All <span class="tc" id="cAll">0</span></button>
+      <button class="tab" data-t="read">Read <span class="tc" id="cRead">0</span></button>
+      <button class="tab" data-t="write">Write <span class="tc" id="cWrite">0</span></button>
     </div>
-    <div class="functions-list" id="functionsList"></div>
+    <div class="fnlist" id="fnlist"></div>
   </div>
 </main>
 
-<!-- SAVE MODAL -->
-<div id="saveModal">
-  <div class="modal-box">
-    <div class="modal-title">Save dApp as HTML</div>
-    <div class="modal-desc">Downloads a standalone <code style="color:var(--accent)">.html</code> file with ethers.js bundled inline — works by double-click, no server needed. Contract address &amp; ABI are pre-loaded.</div>
-    <div style="margin-bottom:20px;"><label>FILE NAME</label><input type="text" id="saveFilename" placeholder="my-dapp" style="margin-top:8px;"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeSaveModal()">Cancel</button>
-      <button class="btn-save" id="saveBtnInModal" onclick="saveHtmlFile()">⬇ Download HTML</button>
+<!-- ── SAVE MODAL ── -->
+<div id="modal">
+  <div class="mbox">
+    <div class="mtitle">Save dApp as HTML</div>
+    <div class="mdesc">Downloads a standalone <code style="color:var(--accent)">.html</code> file with ethers.js bundled inline — works by double-clicking, no server required.</div>
+    <div style="margin-bottom:18px;">
+      <label>FILE NAME</label>
+      <input type="text" id="saveName" placeholder="my-dapp" style="margin-top:6px;">
+    </div>
+    <div class="macts">
+      <button class="btn-cx" id="modalCx">Cancel</button>
+      <button class="btn-save" id="modalSave">⬇ Download HTML</button>
     </div>
   </div>
 </div>
@@ -215,549 +211,273 @@
 <div id="toast"></div>
 
 <script>
-// ─────────────────────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────────────────────
-var provider = null, signer = null, contract = null;
-var currentAbi = null, currentAddress = null;
+"use strict";
 
-// ─────────────────────────────────────────────────────────
-// WALLET  –  explicit connect, reacts to account switches
-// ─────────────────────────────────────────────────────────
+// ── globals ──────────────────────────────────────────────
+var gProvider = null, gSigner = null, gContract = null;
+var gAbi = null, gAddr = null;
+
+// ── wire up buttons (no inline onclick, avoids CSP issues) ──
+document.getElementById('connectBtn').addEventListener('click', connectWallet);
+document.getElementById('createBtn').addEventListener('click', createDapp);
+document.getElementById('sampleBtn').addEventListener('click', loadSample);
+document.getElementById('backBtn').addEventListener('click', goBack);
+document.getElementById('saveBtn').addEventListener('click', function(){ document.getElementById('modal').classList.add('open'); });
+document.getElementById('modalCx').addEventListener('click', function(){ document.getElementById('modal').classList.remove('open'); });
+document.getElementById('modal').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
+document.getElementById('modalSave').addEventListener('click', saveFile);
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){ filterFns(this.dataset.t, this); });
+});
+
+// ── WALLET ────────────────────────────────────────────────
 async function connectWallet() {
-  if (!window.ethereum) { toast('MetaMask not detected. Install it from metamask.io', 'error'); return; }
+  if (!window.ethereum) { toast('MetaMask not detected. Install it from metamask.io', 'err'); return; }
   var btn = document.getElementById('connectBtn');
   btn.textContent = 'Connecting…'; btn.disabled = true;
   try {
-    provider = new ethers.BrowserProvider(window.ethereum);
-    // eth_requestAccounts always opens the MetaMask popup so the user
-    // can actively choose which account to use (including after switching).
-    await provider.send('eth_requestAccounts', []);
-    signer = await provider.getSigner();
-    await updateWalletUI();
-    if (currentAddress && currentAbi)
-      contract = new ethers.Contract(currentAddress, currentAbi, signer);
+    gProvider = new ethers.BrowserProvider(window.ethereum);
+    await gProvider.send('eth_requestAccounts', []);
+    gSigner = await gProvider.getSigner();
+    await refreshWalletUI();
+    if (gAddr && gAbi) gContract = new ethers.Contract(gAddr, gAbi, gSigner);
 
-    // Remove old listeners before adding new ones to prevent stacking
     window.ethereum.removeAllListeners('accountsChanged');
     window.ethereum.removeAllListeners('chainChanged');
-
     window.ethereum.on('accountsChanged', async function(accounts) {
-      if (!accounts || accounts.length === 0) {
-        disconnectWallet();
-      } else {
-        // Refresh signer to get the newly selected account
-        signer = await provider.getSigner();
-        await updateWalletUI();
-        if (currentAddress && currentAbi)
-          contract = new ethers.Contract(currentAddress, currentAbi, signer);
-        toast('Account switched', 'info');
-      }
+      if (!accounts || !accounts.length) { resetWalletUI(); return; }
+      gSigner = await gProvider.getSigner();
+      await refreshWalletUI();
+      if (gAddr && gAbi) gContract = new ethers.Contract(gAddr, gAbi, gSigner);
+      toast('Account switched', 'info');
     });
     window.ethereum.on('chainChanged', function() {
       toast('Network changed — reconnecting…', 'info');
-      connectWallet();
+      setTimeout(connectWallet, 300);
     });
   } catch(e) {
-    toast('Connection failed: ' + (e.message || String(e)), 'error');
+    toast('Connection failed: ' + (e.message || String(e)), 'err');
   } finally {
     btn.disabled = false;
   }
 }
 
-async function updateWalletUI() {
-  var address = await signer.getAddress();
-  var network = await provider.getNetwork();
-  var chainId = Number(network.chainId);
+async function refreshWalletUI() {
+  var addr = await gSigner.getAddress();
+  var chainId = Number((await gProvider.getNetwork()).chainId);
+  var isSep = chainId === 11155111;
 
-  var addrEl = document.getElementById('walletAddress');
-  addrEl.style.display = 'block';
-  addrEl.textContent = address.slice(0,6) + '…' + address.slice(-4);
-  addrEl.title = 'Click to copy: ' + address;
-  addrEl.onclick = function() { navigator.clipboard.writeText(address); toast('Address copied!', 'info'); };
+  var wa = document.getElementById('walletAddr');
+  wa.style.display = 'block';
+  wa.textContent = addr.slice(0,6) + '…' + addr.slice(-4);
+  wa.title = addr;
+  wa.onclick = function(){ navigator.clipboard.writeText(addr); toast('Address copied!', 'info'); };
 
-  var isSepolia = chainId === 11155111;
-  var netName = isSepolia ? 'Sepolia' : chainId === 1 ? 'Mainnet' : 'Chain ' + chainId;
-  var nb = document.getElementById('networkBadge');
-  nb.textContent = netName; nb.style.display = 'block';
-  nb.className = 'network-badge' + (isSepolia ? '' : ' wrong');
-  if (!isSepolia) nb.title = 'Switch to Sepolia testnet';
+  var nb = document.getElementById('netBadge');
+  nb.style.display = 'block';
+  nb.textContent = isSep ? 'Sepolia' : (chainId===1 ? 'Mainnet' : 'Chain '+chainId);
+  nb.className = isSep ? '' : 'wrong';
 
   var btn = document.getElementById('connectBtn');
   btn.textContent = 'Switch Account';
-  btn.className = 'connected';
+  btn.className = 'on';
 }
 
-function disconnectWallet() {
-  signer = null;
-  document.getElementById('walletAddress').style.display = 'none';
-  document.getElementById('networkBadge').style.display = 'none';
+function resetWalletUI() {
+  gSigner = null;
+  document.getElementById('walletAddr').style.display = 'none';
+  document.getElementById('netBadge').style.display = 'none';
   var btn = document.getElementById('connectBtn');
   btn.textContent = 'Connect Wallet'; btn.className = '';
 }
 
-// ─────────────────────────────────────────────────────────
-// CREATE dAPP
-// ─────────────────────────────────────────────────────────
+// ── CREATE dAPP ───────────────────────────────────────────
 function createDapp() {
-  var addrInput = document.getElementById('contractAddress').value.trim();
-  var abiInput  = document.getElementById('contractAbi').value.trim();
-  if (!addrInput) { toast('Enter a contract address.', 'error'); return; }
-  if (!ethers.isAddress(addrInput)) { toast('Invalid Ethereum address.', 'error'); return; }
-  if (!abiInput)  { toast('Paste the contract ABI.', 'error'); return; }
+  var addr = document.getElementById('inAddr').value.trim();
+  var abiRaw = document.getElementById('inAbi').value.trim();
+  if (!addr) { toast('Enter a contract address.', 'err'); return; }
+  if (!ethers.isAddress(addr)) { toast('Invalid Ethereum address.', 'err'); return; }
+  if (!abiRaw) { toast('Paste the contract ABI.', 'err'); return; }
   var abi;
-  try { abi = JSON.parse(abiInput); } catch(e) { toast('Invalid ABI JSON: ' + e.message, 'error'); return; }
-  if (!Array.isArray(abi)) { toast('ABI must be a JSON array.', 'error'); return; }
+  try { abi = JSON.parse(abiRaw); } catch(e) { toast('Bad ABI JSON: ' + e.message, 'err'); return; }
+  if (!Array.isArray(abi)) { toast('ABI must be a JSON array.', 'err'); return; }
 
-  currentAddress = addrInput; currentAbi = abi;
-  if (signer) {
-    contract = new ethers.Contract(addrInput, abi, signer);
+  gAddr = addr; gAbi = abi;
+  if (gSigner) {
+    gContract = new ethers.Contract(addr, abi, gSigner);
   } else {
-    var rpc = new ethers.JsonRpcProvider('https://rpc.sepolia.org');
-    contract = new ethers.Contract(addrInput, abi, rpc);
+    gContract = new ethers.Contract(addr, abi, new ethers.JsonRpcProvider('https://rpc.sepolia.org'));
   }
 
   var fns = abi.filter(function(e){ return e.type === 'function'; });
-  var readFns  = fns.filter(function(f){ return f.stateMutability==='view'||f.stateMutability==='pure'; });
-  var writeFns = fns.filter(function(f){ return f.stateMutability!=='view'&&f.stateMutability!=='pure'; });
-  document.getElementById('countAll').textContent   = fns.length;
-  document.getElementById('countRead').textContent  = readFns.length;
-  document.getElementById('countWrite').textContent = writeFns.length;
+  var rFns = fns.filter(isRead), wFns = fns.filter(function(f){ return !isRead(f); });
+  document.getElementById('cAll').textContent   = fns.length;
+  document.getElementById('cRead').textContent  = rFns.length;
+  document.getElementById('cWrite').textContent = wFns.length;
 
-  var list = document.getElementById('functionsList'); list.innerHTML = '';
-  if (fns.length === 0) { list.innerHTML = '<div class="empty-state">No functions found.</div>'; }
-  else { fns.forEach(function(fn){ list.appendChild(buildCard(fn)); }); }
+  var list = document.getElementById('fnlist'); list.innerHTML = '';
+  fns.length ? fns.forEach(function(fn){ list.appendChild(makeCard(fn)); })
+             : (list.innerHTML = '<div style="text-align:center;padding:36px;color:var(--text-dimmer);font-family:var(--mono)">No functions found.</div>');
 
-  document.getElementById('dappAddress').textContent = addrInput;
-  document.getElementById('saveFilename').value = 'my-dapp';
+  document.getElementById('daddr').textContent = addr;
+  document.getElementById('saveName').value = 'my-dapp';
   document.getElementById('setupView').style.display = 'none';
   document.getElementById('dappView').style.display   = 'block';
-  toast('dApp created — ' + fns.length + ' function(s)!', 'success');
+  toast('dApp ready — ' + fns.length + ' function(s)', 'ok');
 }
 
-function isReadFn(fn){ return fn.stateMutability==='view'||fn.stateMutability==='pure'; }
-function isPayFn(fn) { return fn.stateMutability==='payable'; }
+function isRead(fn){ return fn.stateMutability==='view' || fn.stateMutability==='pure'; }
+function isPay(fn) { return fn.stateMutability==='payable'; }
 
-// ─────────────────────────────────────────────────────────
-// BUILD FUNCTION CARD
-// ─────────────────────────────────────────────────────────
-function buildCard(fn) {
-  var isRead = isReadFn(fn), isPay = isPayFn(fn);
-  var cls   = isPay ? 'payable-fn' : isRead ? 'read-fn' : 'write-fn';
-  var badge = isPay ? 'PAYABLE'    : isRead ? 'READ'    : 'WRITE';
-  var inputs  = fn.inputs  || [];
-  var outputs = fn.outputs || [];
-  var sig = fn.name + '(' + inputs.map(function(i){ return i.type + (i.name?' '+i.name:''); }).join(', ') + ')';
-  var uid = 'fn_' + fn.name + '_' + Math.random().toString(36).slice(2,6);
-
-  var inputsHtml = '';
-  inputs.forEach(function(inp, idx) {
-    var ph = inp.type==='address' ? '0x...' : inp.type==='bool' ? 'true / false' : inp.type.includes('[]') ? 'val1,val2,...' : '';
-    inputsHtml += '<div class="fn-input-group"><label>' + (inp.name||'param'+idx) +
-      '<span class="param-type">' + inp.type + '</span></label>' +
-      '<input type="text" id="' + uid + '_arg' + idx + '" placeholder="' + ph + '" spellcheck="false"></div>';
-  });
-  var payHtml = isPay ? '<div class="fn-input-group value-input-group"><label>⬡ ETH VALUE TO SEND</label>' +
-    '<input type="text" id="' + uid + '_value" placeholder="0.0 (in ETH)" spellcheck="false"></div>' : '';
-  var retHint = outputs.length ? '<div style="font-size:11px;color:var(--text-dimmer);font-family:var(--mono);">Returns: ' +
-    outputs.map(function(o){ return o.type+(o.name?' '+o.name:''); }).join(', ') + '</div>' : '';
-  var btnLabel = isRead ? '▶ Call' : isPay ? '⬡ Send ETH & Execute' : '✎ Execute';
+// ── FUNCTION CARD ─────────────────────────────────────────
+var cardCounter = 0;
+function makeCard(fn) {
+  var rd = isRead(fn), py = isPay(fn);
+  var cls   = py ? 'pfn' : rd ? 'rfn' : 'wfn';
+  var badge = py ? 'PAYABLE' : rd ? 'READ' : 'WRITE';
+  var inp = fn.inputs || [], out = fn.outputs || [];
+  var sig = fn.name + '(' + inp.map(function(i){ return i.type + (i.name?' '+i.name:''); }).join(', ') + ')';
+  var id  = 'c' + (++cardCounter);
 
   var card = document.createElement('div');
-  card.className = 'fn-card ' + cls;
-  card.dataset.type = isRead ? 'read' : 'write';
-  card.innerHTML =
-    '<div class="fn-header" onclick="toggleCard(this)">' +
-      '<span class="fn-type-badge">' + badge + '</span>' +
-      '<span class="fn-name">' + fn.name + '</span>' +
-      '<span class="fn-sig">' + sig + '</span>' +
-      '<span class="fn-chevron">▾</span>' +
-    '</div>' +
-    '<div class="fn-body"><div class="fn-body-inner">' +
-      inputsHtml + payHtml + retHint +
-      '<button class="fn-call-btn" id="' + uid + '_btn" onclick="callFn(\'' + uid + '\',\'' + fn.name + '\',' + inputs.length + ',' + isRead + ',' + isPay + ')">' + btnLabel + '</button>' +
-      '<div class="fn-result" id="' + uid + '_result"></div>' +
-    '</div></div>';
+  card.className = 'fncard ' + cls;
+  card.dataset.kind = rd ? 'read' : 'write';
+
+  // Header
+  var hdr = document.createElement('div');
+  hdr.className = 'fnhdr';
+  hdr.innerHTML = '<span class="badge">'+badge+'</span><span class="fname">'+fn.name+'</span><span class="fsig">'+sig+'</span><span class="chev">▾</span>';
+  hdr.addEventListener('click', function(){ card.classList.toggle('open'); });
+  card.appendChild(hdr);
+
+  // Body
+  var body = document.createElement('div'); body.className = 'fnbody';
+  var inner = document.createElement('div'); inner.className = 'finner';
+
+  // Input fields
+  inp.forEach(function(p, i) {
+    var ph = p.type==='address'?'0x…':p.type==='bool'?'true / false':p.type.includes('[]')?'val1,val2,…':'';
+    var g = document.createElement('div'); g.className = 'pig';
+    var lbl = document.createElement('label');
+    lbl.innerHTML = (p.name||'param'+i) + '<span class="ptype">'+p.type+'</span>';
+    var inp2 = document.createElement('input'); inp2.type='text'; inp2.id=id+'_a'+i; inp2.placeholder=ph; inp2.spellcheck=false;
+    g.appendChild(lbl); g.appendChild(inp2); inner.appendChild(g);
+  });
+
+  // ETH value field for payable
+  if (py) {
+    var pb = document.createElement('div'); pb.className = 'pig paybox';
+    var pl = document.createElement('label'); pl.textContent = '⬡ ETH VALUE TO SEND';
+    var pi = document.createElement('input'); pi.type='text'; pi.id=id+'_v'; pi.placeholder='0.0 (in ETH)'; pi.spellcheck=false;
+    pb.appendChild(pl); pb.appendChild(pi); inner.appendChild(pb);
+  }
+
+  // Returns hint
+  if (out.length) {
+    var rh = document.createElement('div');
+    rh.style.cssText = 'font-size:11px;color:var(--text-dimmer);font-family:var(--mono)';
+    rh.textContent = 'Returns: ' + out.map(function(o){ return o.type+(o.name?' '+o.name:''); }).join(', ');
+    inner.appendChild(rh);
+  }
+
+  // Call button
+  var btnLabel = rd ? '▶ Call' : py ? '⬡ Send ETH & Execute' : '✎ Execute';
+  var cb = document.createElement('button'); cb.className='callbtn'; cb.textContent=btnLabel; cb.id=id+'_btn';
+  (function(fnName, argCount, readFlag, payFlag, cardId){
+    cb.addEventListener('click', function(){ callFn(cardId, fnName, argCount, readFlag, payFlag); });
+  })(fn.name, inp.length, rd, py, id);
+  inner.appendChild(cb);
+
+  // Result box
+  var rb = document.createElement('div'); rb.className='result'; rb.id=id+'_r';
+  inner.appendChild(rb);
+
+  body.appendChild(inner); card.appendChild(body);
   return card;
 }
 
-function toggleCard(h) { h.closest('.fn-card').classList.toggle('open'); }
-
-// ─────────────────────────────────────────────────────────
-// CALL FUNCTION
-// ─────────────────────────────────────────────────────────
-async function callFn(uid, fnName, argCount, isRead, isPay) {
-  var resultEl = document.getElementById(uid+'_result');
-  var btn      = document.getElementById(uid+'_btn');
+// ── CALL FUNCTION ─────────────────────────────────────────
+async function callFn(id, fnName, argCount, readFlag, payFlag) {
+  var rb  = document.getElementById(id+'_r');
+  var btn = document.getElementById(id+'_btn');
   var args = [];
   for (var i=0; i<argCount; i++) {
-    var val = document.getElementById(uid+'_arg'+i).value.trim();
-    var inp = currentAbi.find(function(e){ return e.name===fnName; });
-    var t = (inp && inp.inputs && inp.inputs[i]) ? inp.inputs[i].type : '';
-    args.push(parseArg(val, t));
+    var el = document.getElementById(id+'_a'+i);
+    var rawAbi = gAbi.find(function(e){ return e.name===fnName; });
+    var typ = rawAbi && rawAbi.inputs && rawAbi.inputs[i] ? rawAbi.inputs[i].type : '';
+    args.push(coerce(el ? el.value.trim() : '', typ));
   }
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>' + (isRead ? 'Calling…' : 'Sending…');
-  resultEl.className = 'fn-result visible loading';
-  resultEl.innerHTML = '<div class="result-label">Loading</div>⏳ Waiting…';
+  btn.innerHTML = '<span class="spin"></span>' + (readFlag ? 'Calling…' : 'Sending…');
+  rb.className = 'result show loading';
+  rb.innerHTML = '<div class="rlabel">Working</div>⏳ Please wait…';
   try {
-    if (!contract) throw new Error('Contract not initialised. Press "Create dApp" first.');
-    if (isRead) {
-      var result = await contract[fnName].apply(contract, args);
-      resultEl.className = 'fn-result visible success';
-      resultEl.innerHTML = '<div class="result-label">Result</div>' + fmtVal(result);
+    if (!gContract) throw new Error('No contract loaded.');
+    if (readFlag) {
+      var res = await gContract[fnName].apply(gContract, args);
+      rb.className = 'result show ok';
+      rb.innerHTML = '<div class="rlabel">Result</div>' + fmt(res);
     } else {
-      if (!signer) throw new Error('Please connect your wallet to send transactions.');
-      var c = contract.connect(signer);
-      var opts = {};
-      if (isPay) {
-        var vEl = document.getElementById(uid+'_value');
-        opts.value = ethers.parseEther((vEl ? vEl.value.trim() : '') || '0');
+      if (!gSigner) throw new Error('Connect your wallet first.');
+      var c2 = gContract.connect(gSigner), opts = {};
+      if (payFlag) {
+        var vEl = document.getElementById(id+'_v');
+        opts.value = ethers.parseEther((vEl && vEl.value.trim()) || '0');
       }
-      var callArgs = args.concat([opts]);
-      var tx = await c[fnName].apply(c, callArgs);
-      resultEl.className = 'fn-result visible loading';
-      resultEl.innerHTML = '<div class="result-label">Sent</div>📤 ' + tx.hash + '<br>⏳ Awaiting confirmation…';
-      var receipt = await tx.wait();
-      resultEl.className = 'fn-result visible success';
-      resultEl.innerHTML = '<div class="result-label">Confirmed ✓</div>' +
-        'Block: ' + receipt.blockNumber + ' &nbsp;·&nbsp; Gas: ' + receipt.gasUsed.toString() + '<br>' +
-        'Hash: ' + tx.hash + '<br>' +
-        '<a class="tx-link" href="https://sepolia.etherscan.io/tx/' + tx.hash + '" target="_blank">View on Etherscan ↗</a>';
+      var tx = await c2[fnName].apply(c2, args.concat([opts]));
+      rb.className = 'result show loading';
+      rb.innerHTML = '<div class="rlabel">Sent</div>📤 ' + tx.hash + '<br>⏳ Awaiting confirmation…';
+      var rx = await tx.wait();
+      rb.className = 'result show ok';
+      rb.innerHTML = '<div class="rlabel">Confirmed ✓</div>'
+        + 'Block: ' + rx.blockNumber + ' &nbsp;·&nbsp; Gas: ' + rx.gasUsed.toString() + '<br>'
+        + 'Hash: ' + tx.hash + '<br>'
+        + '<a class="txlink" href="https://sepolia.etherscan.io/tx/'+tx.hash+'" target="_blank">View on Etherscan ↗</a>';
     }
   } catch(e) {
-    var msg = e.reason || e.shortMessage || e.message || String(e);
-    resultEl.className = 'fn-result visible error';
-    resultEl.innerHTML = '<div class="result-label">Error</div>❌ ' + esc(msg);
+    rb.className = 'result show err';
+    rb.innerHTML = '<div class="rlabel">Error</div>❌ ' + esc(e.reason || e.shortMessage || e.message || String(e));
   } finally {
     btn.disabled = false;
-    btn.innerHTML = isRead ? '▶ Call' : isPay ? '⬡ Send ETH & Execute' : '✎ Execute';
+    btn.textContent = readFlag ? '▶ Call' : payFlag ? '⬡ Send ETH & Execute' : '✎ Execute';
   }
 }
 
-function parseArg(val, type) {
-  if (!type) return val;
-  if (type === 'bool') return val.toLowerCase() === 'true';
-  if (type.includes('[]')) return val.split(',').map(function(v){ return parseArg(v.trim(), type.replace('[]','')); });
-  if (type.startsWith('uint') || type.startsWith('int')) return val==='' ? BigInt(0) : BigInt(val);
-  return val;
+function coerce(v, t) {
+  if (!t) return v;
+  if (t==='bool') return v.toLowerCase()==='true';
+  if (t.endsWith('[]')) return v.split(',').map(function(x){ return coerce(x.trim(), t.slice(0,-2)); });
+  if (/^u?int/.test(t)) return v===''?BigInt(0):BigInt(v);
+  return v;
 }
-function fmtVal(r) {
+function fmt(r) {
   if (r===null||r===undefined) return 'null';
   if (typeof r==='bigint') return r.toString();
-  if (typeof r==='boolean') return r ? '✓ true' : '✗ false';
+  if (typeof r==='boolean') return r?'✓ true':'✗ false';
   if (typeof r==='string') return esc(r);
-  if (Array.isArray(r)||(typeof r==='object'&&r[Symbol.iterator])) return '['+Array.from(r).map(fmtVal).join(', ')+']';
+  if (Array.isArray(r)||(r&&typeof r==='object'&&r[Symbol.iterator])) return '['+Array.from(r).map(fmt).join(', ')+']';
   return esc(String(r));
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// ─────────────────────────────────────────────────────────
-// TABS / NAV
-// ─────────────────────────────────────────────────────────
-function filterFunctions(type, tabEl) {
-  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
-  tabEl.classList.add('active');
-  document.querySelectorAll('.fn-card').forEach(function(card){
-    card.style.display = (type==='all' || card.dataset.type===type) ? '' : 'none';
+// ── TABS ──────────────────────────────────────────────────
+function filterFns(type, tab) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('on'); });
+  tab.classList.add('on');
+  document.querySelectorAll('.fncard').forEach(function(c){
+    c.style.display = (type==='all'||c.dataset.kind===type) ? '' : 'none';
   });
 }
+
 function goBack() {
   document.getElementById('dappView').style.display  = 'none';
   document.getElementById('setupView').style.display = 'block';
 }
 
-// ─────────────────────────────────────────────────────────
-// SAVE MODAL
-// ─────────────────────────────────────────────────────────
-function showSaveModal()  { document.getElementById('saveModal').classList.add('open'); }
-function closeSaveModal() { document.getElementById('saveModal').classList.remove('open'); }
-document.getElementById('saveModal').addEventListener('click', function(e){ if(e.target===e.currentTarget) closeSaveModal(); });
-
-// ─────────────────────────────────────────────────────────
-// SAVE AS SELF-CONTAINED HTML
-//
-//  The key fix: we build the output file from a hard-coded
-//  template string (SAVED_APP_TEMPLATE below), NOT from
-//  document.documentElement.outerHTML which captures live
-//  DOM state and breaks on re-open.
-// ─────────────────────────────────────────────────────────
-async function saveHtmlFile() {
-  var filename = (document.getElementById('saveFilename').value.trim() || 'my-dapp') + '.html';
-  var saveBtn  = document.getElementById('saveBtnInModal');
-  saveBtn.disabled = true; saveBtn.textContent = '⏳ Bundling…';
-
-  // Fetch ethers.js to inline (we are online right now)
-  var ethersCode = '';
-  try {
-    var r = await fetch('https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js');
-    ethersCode = await r.text();
-  } catch(e) {
-    toast('Warning: could not bundle ethers.js. File needs internet to work.', 'error');
-  }
-
-  // Embed address + ABI safely as JSON literals inside the <script>
-  var safeAddr = JSON.stringify(currentAddress);
-  var safeAbi  = JSON.stringify(currentAbi);   // We'll JSON.stringify again at runtime to fill textarea
-
-  var html = SAVED_APP_TEMPLATE
-    .replace('__ETHERS_PLACEHOLDER__', ethersCode)
-    .replace('__ADDR_PLACEHOLDER__',   safeAddr)
-    .replace('__ABI_PLACEHOLDER__',    safeAbi);
-
-  var blob = new Blob([html], {type:'text/html'});
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-  closeSaveModal();
-  toast('Saved as ' + filename + ' — works offline by double-click!', 'success');
-  saveBtn.disabled = false; saveBtn.textContent = '⬇ Download HTML';
-}
-
-// ─────────────────────────────────────────────────────────
-// SAVED APP TEMPLATE
-// This is a complete, standalone dApp page.
-// Placeholders are substituted at save time.
-// ─────────────────────────────────────────────────────────
-var SAVED_APP_TEMPLATE = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>dApp</title>
-<script>__ETHERS_PLACEHOLDER__<\/script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
-:root{--bg:#0a0a0f;--surface:#13131c;--border:#2a2a40;--accent:#7c6aff;--accent2:#ff6a9c;--accent3:#6affe8;--text:#e8e8f0;--text-dim:#7070a0;--text-dimmer:#40405a;--read-color:#6affe8;--write-color:#ff9f6a;--payable-color:#ffd76a;--success:#6affa0;--error:#ff6a6a;--mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--radius:8px;}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,106,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,106,255,0.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
-body::after{content:'';position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(124,106,255,0.12) 0%,transparent 70%);pointer-events:none;z-index:0;animation:orb-drift 20s ease-in-out infinite alternate;}
-@keyframes orb-drift{from{transform:translate(0,0);}to{transform:translate(300px,150px);}}
-header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--border);backdrop-filter:blur(12px);background:rgba(10,10,15,0.8);position:sticky;top:0;z-index:10;}
-.logo{font-family:var(--mono);font-size:18px;color:var(--accent);display:flex;align-items:center;gap:10px;}
-.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;}
-.wallet-section{display:flex;align-items:center;gap:10px;}
-.network-badge{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(124,106,255,0.12);border:1px solid rgba(124,106,255,0.3);color:var(--accent);display:none;}
-.network-badge.wrong{color:#ff6a9c;border-color:rgba(255,106,156,0.4);background:rgba(255,106,156,0.08);}
-#walletAddress{font-family:var(--mono);font-size:12px;color:var(--accent3);padding:6px 12px;background:rgba(106,255,232,0.08);border:1px solid rgba(106,255,232,0.2);border-radius:20px;display:none;cursor:pointer;}
-#connectBtn{font-family:var(--mono);font-size:12px;padding:8px 18px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;transition:all 0.2s;letter-spacing:0.05em;}
-#connectBtn:hover{background:rgba(124,106,255,0.15);}
-#connectBtn.connected{border-color:var(--accent3);color:var(--accent3);}
-main{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:48px 24px;}
-.dapp-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;gap:16px;}
-.dapp-title{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;}
-.dapp-address{font-family:var(--mono);font-size:12px;color:var(--text-dim);word-break:break-all;}
-.btn-outline{padding:8px 16px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:0.08em;cursor:pointer;transition:all 0.2s;}
-.btn-outline:hover{border-color:var(--accent);color:var(--accent);background:rgba(124,106,255,0.08);}
-.tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;}
-.tab{flex:1;padding:8px 12px;border:none;border-radius:6px;background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
-.tab.active{color:var(--text);}
-.tab.active[data-tab="read"]{background:rgba(106,255,232,0.1);}
-.tab.active[data-tab="write"]{background:rgba(255,159,106,0.1);}
-.tab.active[data-tab="all"]{background:rgba(124,106,255,0.1);}
-.tab-count{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;font-weight:700;}
-.tab[data-tab="read"] .tab-count{background:rgba(106,255,232,0.15);color:var(--read-color);}
-.tab[data-tab="write"] .tab-count{background:rgba(255,159,106,0.15);color:var(--write-color);}
-.functions-list{display:flex;flex-direction:column;gap:12px;}
-.fn-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-.fn-card.read-fn{border-left:3px solid var(--read-color);}
-.fn-card.write-fn{border-left:3px solid var(--write-color);}
-.fn-card.payable-fn{border-left:3px solid var(--payable-color);}
-.fn-header{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none;}
-.fn-type-badge{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 7px;border-radius:4px;font-weight:700;flex-shrink:0;}
-.read-fn .fn-type-badge{background:rgba(106,255,232,0.1);color:var(--read-color);}
-.write-fn .fn-type-badge{background:rgba(255,159,106,0.1);color:var(--write-color);}
-.payable-fn .fn-type-badge{background:rgba(255,215,106,0.1);color:var(--payable-color);}
-.fn-name{font-family:var(--mono);font-size:14px;font-weight:700;flex:1;}
-.fn-sig{font-family:var(--mono);font-size:11px;color:var(--text-dimmer);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.fn-chevron{color:var(--text-dimmer);transition:transform 0.2s;font-size:12px;flex-shrink:0;}
-.fn-card.open .fn-chevron{transform:rotate(180deg);}
-.fn-body{display:none;padding:0 18px 18px;border-top:1px solid var(--border);}
-.fn-card.open .fn-body{display:block;}
-.fn-body-inner{padding-top:16px;display:flex;flex-direction:column;gap:12px;}
-.fn-input-group label{display:block;font-size:11px;margin-bottom:5px;color:var(--text-dim);font-family:var(--mono);}
-.fn-input-group .param-type{font-size:10px;color:var(--text-dimmer);margin-left:6px;}
-.fn-input-group input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color 0.2s;}
-.fn-input-group input:focus{border-color:var(--accent);}
-.value-input-group{background:rgba(255,215,106,0.05);border:1px solid rgba(255,215,106,0.2);border-radius:var(--radius);padding:12px;}
-.value-input-group label{color:var(--payable-color);}
-.fn-call-btn{padding:10px 20px;border:none;border-radius:var(--radius);font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;align-self:flex-start;}
-.read-fn .fn-call-btn{background:rgba(106,255,232,0.1);color:var(--read-color);border:1px solid rgba(106,255,232,0.3);}
-.read-fn .fn-call-btn:hover{background:rgba(106,255,232,0.2);}
-.write-fn .fn-call-btn{background:rgba(255,159,106,0.1);color:var(--write-color);border:1px solid rgba(255,159,106,0.3);}
-.write-fn .fn-call-btn:hover{background:rgba(255,159,106,0.2);}
-.payable-fn .fn-call-btn{background:rgba(255,215,106,0.1);color:var(--payable-color);border:1px solid rgba(255,215,106,0.3);}
-.payable-fn .fn-call-btn:hover{background:rgba(255,215,106,0.2);}
-.fn-call-btn:disabled{opacity:0.4;cursor:not-allowed;}
-.fn-result{display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.7;word-break:break-all;}
-.fn-result.visible{display:block;}
-.fn-result.success{border-color:rgba(106,255,160,0.3);color:var(--success);}
-.fn-result.error{border-color:rgba(255,106,106,0.3);color:var(--error);}
-.fn-result.loading{color:var(--text-dim);}
-.fn-result .result-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:6px;}
-.tx-link{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);text-decoration:none;margin-top:6px;}
-.tx-link:hover{text-decoration:underline;}
-#toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:var(--radius);font-family:var(--mono);font-size:12px;z-index:1000;transform:translateY(100px);opacity:0;transition:all 0.3s;max-width:360px;}
-#toast.show{transform:translateY(0);opacity:1;}
-#toast.success{background:rgba(106,255,160,0.1);border:1px solid rgba(106,255,160,0.3);color:var(--success);}
-#toast.error{background:rgba(255,106,106,0.1);border:1px solid rgba(255,106,106,0.3);color:var(--error);}
-#toast.info{background:rgba(124,106,255,0.1);border:1px solid rgba(124,106,255,0.3);color:var(--accent);}
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:6px;}
-@keyframes spin{to{transform:rotate(360deg);}}
-</style>
-</head>
-<body>
-<header>
-  <div class="logo"><div class="logo-icon">⬡</div>dApp</div>
-  <div class="wallet-section">
-    <span class="network-badge" id="networkBadge"></span>
-    <span id="walletAddress"></span>
-    <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
-  </div>
-</header>
-<main>
-  <div class="dapp-header">
-    <div>
-      <div class="dapp-title">Contract dApp</div>
-      <div class="dapp-address" id="dappAddress"></div>
-    </div>
-  </div>
-  <div class="tabs">
-    <button class="tab active" data-tab="all" onclick="filterFns('all',this)">All <span class="tab-count" id="countAll" style="background:rgba(124,106,255,0.15);color:var(--accent)">0</span></button>
-    <button class="tab" data-tab="read" onclick="filterFns('read',this)">Read <span class="tab-count" id="countRead">0</span></button>
-    <button class="tab" data-tab="write" onclick="filterFns('write',this)">Write <span class="tab-count" id="countWrite">0</span></button>
-  </div>
-  <div class="functions-list" id="functionsList"></div>
-</main>
-<div id="toast"></div>
-<script>
-var provider=null,signer=null,contract=null;
-var ADDR=__ADDR_PLACEHOLDER__;
-var ABI=__ABI_PLACEHOLDER__;
-
-async function connectWallet(){
-  if(!window.ethereum){toast('MetaMask not detected.','error');return;}
-  var btn=document.getElementById('connectBtn');
-  btn.textContent='Connecting…';btn.disabled=true;
-  try{
-    provider=new ethers.BrowserProvider(window.ethereum);
-    await provider.send('eth_requestAccounts',[]);
-    signer=await provider.getSigner();
-    await updateUI();
-    contract=new ethers.Contract(ADDR,ABI,signer);
-    window.ethereum.removeAllListeners('accountsChanged');
-    window.ethereum.removeAllListeners('chainChanged');
-    window.ethereum.on('accountsChanged',async function(accs){
-      if(!accs||accs.length===0){signer=null;document.getElementById('walletAddress').style.display='none';document.getElementById('networkBadge').style.display='none';var b=document.getElementById('connectBtn');b.textContent='Connect Wallet';b.className='';}
-      else{signer=await provider.getSigner();await updateUI();contract=new ethers.Contract(ADDR,ABI,signer);toast('Account switched','info');}
-    });
-    window.ethereum.on('chainChanged',function(){toast('Network changed','info');connectWallet();});
-  }catch(e){toast('Failed: '+(e.message||e),'error');}
-  finally{btn.disabled=false;}
-}
-async function updateUI(){
-  var addr=await signer.getAddress();
-  var net=await provider.getNetwork();
-  var cid=Number(net.chainId);
-  var el=document.getElementById('walletAddress');
-  el.style.display='block';el.textContent=addr.slice(0,6)+'…'+addr.slice(-4);
-  el.title='Click to copy: '+addr;
-  el.onclick=function(){navigator.clipboard.writeText(addr);toast('Copied!','info');};
-  var nb=document.getElementById('networkBadge');
-  var isSep=cid===11155111;
-  nb.textContent=isSep?'Sepolia':'Chain '+cid;nb.style.display='block';
-  nb.className='network-badge'+(isSep?'':' wrong');
-  var btn=document.getElementById('connectBtn');btn.textContent='Switch Account';btn.className='connected';
-}
-function isReadFn(fn){return fn.stateMutability==='view'||fn.stateMutability==='pure';}
-function isPayFn(fn){return fn.stateMutability==='payable';}
-function buildCard(fn){
-  var isRead=isReadFn(fn),isPay=isPayFn(fn);
-  var cls=isPay?'payable-fn':isRead?'read-fn':'write-fn';
-  var badge=isPay?'PAYABLE':isRead?'READ':'WRITE';
-  var inputs=fn.inputs||[];var outputs=fn.outputs||[];
-  var sig=fn.name+'('+inputs.map(function(i){return i.type+(i.name?' '+i.name:'');}).join(', ')+')';
-  var uid='fn_'+fn.name+'_'+Math.random().toString(36).slice(2,6);
-  var ih='';
-  inputs.forEach(function(inp,idx){
-    var ph=inp.type==='address'?'0x...':inp.type==='bool'?'true/false':inp.type.includes('[]')?'v1,v2,...':'';
-    ih+='<div class="fn-input-group"><label>'+(inp.name||'param'+idx)+'<span class="param-type">'+inp.type+'</span></label><input type="text" id="'+uid+'_arg'+idx+'" placeholder="'+ph+'" spellcheck="false"></div>';
-  });
-  var ph2=isPay?'<div class="fn-input-group value-input-group"><label>⬡ ETH VALUE TO SEND</label><input type="text" id="'+uid+'_value" placeholder="0.0 (in ETH)" spellcheck="false"></div>':'';
-  var rh=outputs.length?'<div style="font-size:11px;color:var(--text-dimmer);font-family:var(--mono);">Returns: '+outputs.map(function(o){return o.type+(o.name?' '+o.name:'');}).join(', ')+'</div>':'';
-  var bl=isRead?'▶ Call':isPay?'⬡ Send ETH & Execute':'✎ Execute';
-  var card=document.createElement('div');
-  card.className='fn-card '+cls;card.dataset.type=isRead?'read':'write';
-  card.innerHTML='<div class="fn-header" onclick="toggleCard(this)"><span class="fn-type-badge">'+badge+'</span><span class="fn-name">'+fn.name+'</span><span class="fn-sig">'+sig+'</span><span class="fn-chevron">▾</span></div><div class="fn-body"><div class="fn-body-inner">'+ih+ph2+rh+'<button class="fn-call-btn" id="'+uid+'_btn" onclick="callFn(\''+uid+'\',\''+fn.name+'\','+inputs.length+','+isRead+','+isPay+')">'+bl+'</button><div class="fn-result" id="'+uid+'_result"></div></div></div>';
-  return card;
-}
-function toggleCard(h){h.closest('.fn-card').classList.toggle('open');}
-async function callFn(uid,fnName,argCount,isRead,isPay){
-  var re=document.getElementById(uid+'_result'),btn=document.getElementById(uid+'_btn');
-  var args=[];
-  for(var i=0;i<argCount;i++){
-    var val=document.getElementById(uid+'_arg'+i).value.trim();
-    var inp=ABI.find(function(e){return e.name===fnName;});
-    var t=(inp&&inp.inputs&&inp.inputs[i])?inp.inputs[i].type:'';
-    args.push(parseArg(val,t));
-  }
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>'+(isRead?'Calling…':'Sending…');
-  re.className='fn-result visible loading';re.innerHTML='<div class="result-label">Loading</div>⏳ Waiting…';
-  try{
-    if(!contract)throw new Error('No contract. Connect wallet first.');
-    if(isRead){
-      var res=await contract[fnName].apply(contract,args);
-      re.className='fn-result visible success';re.innerHTML='<div class="result-label">Result</div>'+fmtVal(res);
-    }else{
-      if(!signer)throw new Error('Connect your wallet first.');
-      var c=contract.connect(signer),opts={};
-      if(isPay){var vEl=document.getElementById(uid+'_value');opts.value=ethers.parseEther((vEl?vEl.value.trim():'')||'0');}
-      var tx=await c[fnName].apply(c,args.concat([opts]));
-      re.className='fn-result visible loading';re.innerHTML='<div class="result-label">Sent</div>📤 '+tx.hash+'<br>⏳ Awaiting…';
-      var receipt=await tx.wait();
-      re.className='fn-result visible success';
-      re.innerHTML='<div class="result-label">Confirmed ✓</div>Block: '+receipt.blockNumber+' · Gas: '+receipt.gasUsed.toString()+'<br>Hash: '+tx.hash+'<br><a class="tx-link" href="https://sepolia.etherscan.io/tx/'+tx.hash+'" target="_blank">View on Etherscan ↗</a>';
-    }
-  }catch(e){
-    re.className='fn-result visible error';re.innerHTML='<div class="result-label">Error</div>❌ '+esc(e.reason||e.shortMessage||e.message||String(e));
-  }finally{btn.disabled=false;btn.innerHTML=isRead?'▶ Call':isPay?'⬡ Send ETH & Execute':'✎ Execute';}
-}
-function parseArg(v,t){if(!t)return v;if(t==='bool')return v.toLowerCase()==='true';if(t.includes('[]'))return v.split(',').map(function(x){return parseArg(x.trim(),t.replace('[]',''));});if(t.startsWith('uint')||t.startsWith('int'))return v===''?BigInt(0):BigInt(v);return v;}
-function fmtVal(r){if(r===null||r===undefined)return 'null';if(typeof r==='bigint')return r.toString();if(typeof r==='boolean')return r?'✓ true':'✗ false';if(typeof r==='string')return esc(r);if(Array.isArray(r)||(typeof r==='object'&&r[Symbol.iterator]))return '['+Array.from(r).map(fmtVal).join(', ')+']';return esc(String(r));}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function filterFns(type,tab){document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});tab.classList.add('active');document.querySelectorAll('.fn-card').forEach(function(c){c.style.display=(type==='all'||c.dataset.type===type)?'':'none';});}
-var toastT;
-function toast(msg,type){var el=document.getElementById('toast');el.textContent=msg;el.className='show '+(type||'info');clearTimeout(toastT);toastT=setTimeout(function(){el.className=(type||'info');},4000);}
-window.addEventListener('DOMContentLoaded',function(){
-  var fns=ABI.filter(function(e){return e.type==='function';});
-  var readFns=fns.filter(function(f){return f.stateMutability==='view'||f.stateMutability==='pure';});
-  var writeFns=fns.filter(function(f){return f.stateMutability!=='view'&&f.stateMutability!=='pure';});
-  document.getElementById('countAll').textContent=fns.length;
-  document.getElementById('countRead').textContent=readFns.length;
-  document.getElementById('countWrite').textContent=writeFns.length;
-  document.getElementById('dappAddress').textContent=ADDR;
-  var list=document.getElementById('functionsList');list.innerHTML='';
-  if(fns.length===0){list.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-dimmer);font-family:var(--mono);">No functions found.</div>';}
-  else{fns.forEach(function(fn){list.appendChild(buildCard(fn));});}
-  // Init read-only contract immediately; signer added on wallet connect
-  try{
-    var rpc=new ethers.JsonRpcProvider('https://rpc.sepolia.org');
-    contract=new ethers.Contract(ADDR,ABI,rpc);
-  }catch(e){}
-  toast('Connect your wallet to interact with this contract.','info');
-});
-<\/script>
-</body>
-</html>`;
-
-// ─────────────────────────────────────────────────────────
-// SAMPLE CONTRACT
-// ─────────────────────────────────────────────────────────
+// ── SAMPLE ───────────────────────────────────────────────
 function loadSample() {
-  document.getElementById('contractAddress').value = '0x7169D38820dfd117C3FA1f22a697dBA58d90BA06';
-  document.getElementById('contractAbi').value = JSON.stringify([
+  document.getElementById('inAddr').value = '0x7169D38820dfd117C3FA1f22a697dBA58d90BA06';
+  document.getElementById('inAbi').value = JSON.stringify([
     {"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"stateMutability":"view","type":"function"},
     {"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"stateMutability":"view","type":"function"},
     {"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -769,18 +489,318 @@ function loadSample() {
     {"inputs":[{"name":"from","type":"address"},{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"}
   ], null, 2);
-  toast('Sample ABI loaded — press "Create dApp" to continue.', 'info');
+  toast('Sample ABI loaded — press "Create dApp"', 'info');
 }
 
-// ─────────────────────────────────────────────────────────
-// TOAST
-// ─────────────────────────────────────────────────────────
-var toastTimeout;
+// ── TOAST ─────────────────────────────────────────────────
+var _tt;
 function toast(msg, type) {
   var el = document.getElementById('toast');
   el.textContent = msg; el.className = 'show ' + (type||'info');
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(function(){ el.className = (type||'info'); }, 4000);
+  clearTimeout(_tt); _tt = setTimeout(function(){ el.className = type||'info'; }, 4000);
+}
+
+// ── SAVE ─────────────────────────────────────────────────
+// The saved file passes ABI and address via <script type="application/json"> tags.
+// This completely avoids any JS string escaping issues.
+async function saveFile() {
+  var filename = (document.getElementById('saveName').value.trim() || 'my-dapp') + '.html';
+  var sb = document.getElementById('modalSave');
+  sb.disabled = true; sb.textContent = '⏳ Bundling…';
+
+  var ethersCode = '';
+  try {
+    var r = await fetch('https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    ethersCode = await r.text();
+  } catch(e) {
+    toast('Could not fetch ethers.js — file needs internet to work', 'err');
+  }
+
+  // Encode ABI and address as JSON inside <script type="application/json"> —
+  // JSON.stringify produces valid JSON which is safe inside that tag type.
+  // The runtime script reads them back with JSON.parse(el.textContent).
+  var abiJson  = JSON.stringify(gAbi);
+  var addrJson = JSON.stringify(gAddr);
+
+  var html = buildSavedFile(ethersCode, addrJson, abiJson);
+  var blob = new Blob([html], {type:'text/html'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a'); a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+  document.getElementById('modal').classList.remove('open');
+  toast('Saved as ' + filename + ' — works offline!', 'ok');
+  sb.disabled=false; sb.textContent='⬇ Download HTML';
+}
+
+// ── SAVED FILE BUILDER ────────────────────────────────────
+function buildSavedFile(ethersCode, addrJson, abiJson) {
+  // CRITICAL: ABI and address are stored in <script type="application/json">
+  // tags and read at runtime. They NEVER appear inside JS string literals,
+  // so no escaping problems regardless of what the ABI contains.
+  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+  + '<meta charset="UTF-8">\n'
+  + '<meta name="viewport" content="width=device-width,initial-scale=1.0">\n'
+  + '<title>dApp</title>\n'
+  + '<script>' + ethersCode + '<\/script>\n'
+  + '<style>\n'
+  + '@import url(\'https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap\');\n'
+  + savedCSS()
+  + '\n</style>\n'
+  + '</head>\n<body>\n'
+  // Pass data as JSON tags — 100% safe, no escaping needed
+  + '<script type="application/json" id="_addr">' + addrJson + '<\/script>\n'
+  + '<script type="application/json" id="_abi">'  + abiJson  + '<\/script>\n'
+  + savedHTML()
+  + '<script>\n'
+  + savedJS()
+  + '\n<\/script>\n</body>\n</html>';
+}
+
+function savedCSS() {
+  return ':root{--bg:#0a0a0f;--surface:#13131c;--border:#2a2a40;--accent:#7c6aff;--accent2:#ff6a9c;--accent3:#6affe8;--text:#e8e8f0;--text-dim:#7070a0;--text-dimmer:#40405a;--read:#6affe8;--write:#ff9f6a;--pay:#ffd76a;--ok:#6affa0;--err:#ff6a6a;--mono:\'Space Mono\',monospace;--sans:\'DM Sans\',sans-serif;--r:8px;}\n'
+  + '*{box-sizing:border-box;margin:0;padding:0;}\n'
+  + 'body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}\n'
+  + 'body::before{content:\'\';position:fixed;inset:0;background-image:linear-gradient(rgba(124,106,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,106,255,.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}\n'
+  + 'body::after{content:\'\';position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(124,106,255,.12),transparent 70%);pointer-events:none;z-index:0;animation:drift 20s ease-in-out infinite alternate;}\n'
+  + '@keyframes drift{to{transform:translate(300px,150px);}}\n'
+  + 'header{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid var(--border);background:rgba(10,10,15,.85);backdrop-filter:blur(12px);position:sticky;top:0;z-index:10;}\n'
+  + '.logo{font-family:var(--mono);font-size:17px;color:var(--accent);display:flex;align-items:center;gap:10px;}\n'
+  + '.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:6px;display:grid;place-items:center;font-size:13px;}\n'
+  + '.wsec{display:flex;align-items:center;gap:10px;}\n'
+  + '#netBadge{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(124,106,255,.12);border:1px solid rgba(124,106,255,.3);color:var(--accent);display:none;}\n'
+  + '#netBadge.wrong{color:var(--accent2);border-color:rgba(255,106,156,.4);background:rgba(255,106,156,.08);}\n'
+  + '#walletAddr{font-family:var(--mono);font-size:12px;color:var(--accent3);padding:6px 12px;background:rgba(106,255,232,.08);border:1px solid rgba(106,255,232,.2);border-radius:20px;display:none;cursor:pointer;}\n'
+  + '#walletAddr:hover{background:rgba(106,255,232,.18);}\n'
+  + '#connectBtn{font-family:var(--mono);font-size:12px;padding:8px 18px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;letter-spacing:.05em;transition:all .2s;}\n'
+  + '#connectBtn:hover{background:rgba(124,106,255,.15);}\n'
+  + '#connectBtn.on{border-color:var(--accent3);color:var(--accent3);}\n'
+  + '#connectBtn:disabled{opacity:.5;cursor:not-allowed;}\n'
+  + 'main{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:48px 24px;}\n'
+  + '.dhead{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap;}\n'
+  + '.dtitle{font-family:var(--mono);font-size:21px;font-weight:700;margin-bottom:5px;}\n'
+  + '.daddr{font-family:var(--mono);font-size:12px;color:var(--text-dim);word-break:break-all;}\n'
+  + '.btn-sec{padding:8px 16px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:11px;letter-spacing:.08em;cursor:pointer;transition:all .2s;}\n'
+  + '.btn-sec:hover{border-color:var(--accent);color:var(--accent);background:rgba(124,106,255,.08);}\n'
+  + '.tabs{display:flex;gap:4px;margin-bottom:18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:4px;}\n'
+  + '.tab{flex:1;padding:8px;border:none;border-radius:6px;background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;}\n'
+  + '.tab.on{color:var(--text);}\n'
+  + '.tab.on[data-t=all]{background:rgba(124,106,255,.1);}\n'
+  + '.tab.on[data-t=read]{background:rgba(106,255,232,.1);}\n'
+  + '.tab.on[data-t=write]{background:rgba(255,159,106,.1);}\n'
+  + '.tc{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;font-weight:700;}\n'
+  + '.tab[data-t=all] .tc{background:rgba(124,106,255,.15);color:var(--accent);}\n'
+  + '.tab[data-t=read] .tc{background:rgba(106,255,232,.15);color:var(--read);}\n'
+  + '.tab[data-t=write] .tc{background:rgba(255,159,106,.15);color:var(--write);}\n'
+  + '.fnlist{display:flex;flex-direction:column;gap:10px;}\n'
+  + '.fncard{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}\n'
+  + '.fncard.rfn{border-left:3px solid var(--read);}\n'
+  + '.fncard.wfn{border-left:3px solid var(--write);}\n'
+  + '.fncard.pfn{border-left:3px solid var(--pay);}\n'
+  + '.fnhdr{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none;}\n'
+  + '.badge{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:4px;font-weight:700;flex-shrink:0;}\n'
+  + '.rfn .badge{background:rgba(106,255,232,.1);color:var(--read);}\n'
+  + '.wfn .badge{background:rgba(255,159,106,.1);color:var(--write);}\n'
+  + '.pfn .badge{background:rgba(255,215,106,.1);color:var(--pay);}\n'
+  + '.fname{font-family:var(--mono);font-size:14px;font-weight:700;flex:1;}\n'
+  + '.fsig{font-family:var(--mono);font-size:11px;color:var(--text-dimmer);flex:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}\n'
+  + '.chev{color:var(--text-dimmer);transition:transform .2s;font-size:12px;flex-shrink:0;}\n'
+  + '.fncard.open .chev{transform:rotate(180deg);}\n'
+  + '.fnbody{display:none;padding:0 16px 16px;border-top:1px solid var(--border);}\n'
+  + '.fncard.open .fnbody{display:block;}\n'
+  + '.finner{padding-top:14px;display:flex;flex-direction:column;gap:11px;}\n'
+  + '.pig label{display:block;font-size:11px;margin-bottom:4px;color:var(--text-dim);font-family:var(--mono);}\n'
+  + '.ptype{font-size:10px;color:var(--text-dimmer);margin-left:5px;}\n'
+  + '.pig input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 11px;outline:none;transition:border-color .2s;}\n'
+  + '.pig input:focus{border-color:var(--accent);}\n'
+  + '.paybox{background:rgba(255,215,106,.05);border:1px solid rgba(255,215,106,.2);border-radius:var(--r);padding:11px;}\n'
+  + '.paybox label{color:var(--pay);}\n'
+  + '.callbtn{padding:9px 18px;border:none;border-radius:var(--r);font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;align-self:flex-start;}\n'
+  + '.rfn .callbtn{background:rgba(106,255,232,.1);color:var(--read);border:1px solid rgba(106,255,232,.3);}\n'
+  + '.rfn .callbtn:hover{background:rgba(106,255,232,.2);}\n'
+  + '.wfn .callbtn{background:rgba(255,159,106,.1);color:var(--write);border:1px solid rgba(255,159,106,.3);}\n'
+  + '.wfn .callbtn:hover{background:rgba(255,159,106,.2);}\n'
+  + '.pfn .callbtn{background:rgba(255,215,106,.1);color:var(--pay);border:1px solid rgba(255,215,106,.3);}\n'
+  + '.pfn .callbtn:hover{background:rgba(255,215,106,.2);}\n'
+  + '.callbtn:disabled{opacity:.4;cursor:not-allowed;}\n'
+  + '.result{display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;font-family:var(--mono);font-size:12px;line-height:1.7;word-break:break-all;}\n'
+  + '.result.show{display:block;}\n'
+  + '.result.ok{border-color:rgba(106,255,160,.3);color:var(--ok);}\n'
+  + '.result.err{border-color:rgba(255,106,106,.3);color:var(--err);}\n'
+  + '.result.loading{color:var(--text-dim);}\n'
+  + '.rlabel{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:5px;}\n'
+  + '.txlink{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);text-decoration:none;margin-top:5px;}\n'
+  + '.txlink:hover{text-decoration:underline;}\n'
+  + '#toast{position:fixed;bottom:24px;right:24px;padding:11px 18px;border-radius:var(--r);font-family:var(--mono);font-size:12px;z-index:1000;transform:translateY(80px);opacity:0;transition:all .3s;max-width:340px;pointer-events:none;}\n'
+  + '#toast.show{transform:translateY(0);opacity:1;}\n'
+  + '#toast.ok{background:rgba(106,255,160,.1);border:1px solid rgba(106,255,160,.3);color:var(--ok);}\n'
+  + '#toast.err{background:rgba(255,106,106,.1);border:1px solid rgba(255,106,106,.3);color:var(--err);}\n'
+  + '#toast.info{background:rgba(124,106,255,.1);border:1px solid rgba(124,106,255,.3);color:var(--accent);}\n'
+  + '.spin{display:inline-block;width:13px;height:13px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:5px;}\n'
+  + '@keyframes spin{to{transform:rotate(360deg);}}\n';
+}
+
+function savedHTML() {
+  return '<header>\n'
+  + '  <div class="logo"><div class="logo-icon">⬡</div>dApp</div>\n'
+  + '  <div class="wsec">\n'
+  + '    <span id="netBadge"></span>\n'
+  + '    <span id="walletAddr"></span>\n'
+  + '    <button id="connectBtn">Connect Wallet</button>\n'
+  + '  </div>\n'
+  + '</header>\n'
+  + '<main>\n'
+  + '  <div class="dhead">\n'
+  + '    <div>\n'
+  + '      <div class="dtitle">Contract dApp</div>\n'
+  + '      <div class="daddr" id="daddr"></div>\n'
+  + '    </div>\n'
+  + '  </div>\n'
+  + '  <div class="tabs">\n'
+  + '    <button class="tab on" data-t="all">All <span class="tc" id="cAll">0</span></button>\n'
+  + '    <button class="tab" data-t="read">Read <span class="tc" id="cRead">0</span></button>\n'
+  + '    <button class="tab" data-t="write">Write <span class="tc" id="cWrite">0</span></button>\n'
+  + '  </div>\n'
+  + '  <div class="fnlist" id="fnlist"></div>\n'
+  + '</main>\n'
+  + '<div id="toast"></div>\n';
+}
+
+function savedJS() {
+  // This is the complete self-contained runtime for the saved file.
+  // It reads ABI and address from <script type="application/json"> tags.
+  return '"use strict";\n'
+  + 'var gProvider=null,gSigner=null,gContract=null;\n'
+  + 'var gAddr=JSON.parse(document.getElementById("_addr").textContent);\n'
+  + 'var gAbi=JSON.parse(document.getElementById("_abi").textContent);\n'
+  + 'document.getElementById("connectBtn").addEventListener("click",connectWallet);\n'
+  + 'document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){filterFns(this.dataset.t,this);});});\n'
+  + 'async function connectWallet(){\n'
+  + '  if(!window.ethereum){toast("MetaMask not detected.","err");return;}\n'
+  + '  var btn=document.getElementById("connectBtn");\n'
+  + '  btn.textContent="Connecting\u2026";btn.disabled=true;\n'
+  + '  try{\n'
+  + '    gProvider=new ethers.BrowserProvider(window.ethereum);\n'
+  + '    await gProvider.send("eth_requestAccounts",[]);\n'
+  + '    gSigner=await gProvider.getSigner();\n'
+  + '    await refreshUI();\n'
+  + '    gContract=new ethers.Contract(gAddr,gAbi,gSigner);\n'
+  + '    window.ethereum.removeAllListeners("accountsChanged");\n'
+  + '    window.ethereum.removeAllListeners("chainChanged");\n'
+  + '    window.ethereum.on("accountsChanged",async function(a){\n'
+  + '      if(!a||!a.length){gSigner=null;document.getElementById("walletAddr").style.display="none";document.getElementById("netBadge").style.display="none";var b=document.getElementById("connectBtn");b.textContent="Connect Wallet";b.className="";return;}\n'
+  + '      gSigner=await gProvider.getSigner();await refreshUI();\n'
+  + '      gContract=new ethers.Contract(gAddr,gAbi,gSigner);toast("Account switched","info");\n'
+  + '    });\n'
+  + '    window.ethereum.on("chainChanged",function(){toast("Network changed","info");setTimeout(connectWallet,300);});\n'
+  + '  }catch(e){toast("Failed: "+(e.message||String(e)),"err");}\n'
+  + '  finally{btn.disabled=false;}\n'
+  + '}\n'
+  + 'async function refreshUI(){\n'
+  + '  var addr=await gSigner.getAddress();\n'
+  + '  var cid=Number((await gProvider.getNetwork()).chainId);\n'
+  + '  var wa=document.getElementById("walletAddr");\n'
+  + '  wa.style.display="block";wa.textContent=addr.slice(0,6)+"\u2026"+addr.slice(-4);\n'
+  + '  wa.title=addr;wa.onclick=function(){navigator.clipboard.writeText(addr);toast("Copied!","info");};\n'
+  + '  var nb=document.getElementById("netBadge");\n'
+  + '  var isSep=cid===11155111;\n'
+  + '  nb.textContent=isSep?"Sepolia":"Chain "+cid;nb.style.display="block";\n'
+  + '  nb.className=isSep?"":"wrong";\n'
+  + '  var btn=document.getElementById("connectBtn");btn.textContent="Switch Account";btn.className="on";\n'
+  + '}\n'
+  + 'function isRead(fn){return fn.stateMutability==="view"||fn.stateMutability==="pure";}\n'
+  + 'function isPay(fn){return fn.stateMutability==="payable";}\n'
+  + 'var _cc=0;\n'
+  + 'function makeCard(fn){\n'
+  + '  var rd=isRead(fn),py=isPay(fn);\n'
+  + '  var cls=py?"pfn":rd?"rfn":"wfn",badge=py?"PAYABLE":rd?"READ":"WRITE";\n'
+  + '  var inp=fn.inputs||[],out=fn.outputs||[];\n'
+  + '  var sig=fn.name+"("+inp.map(function(i){return i.type+(i.name?" "+i.name:"");}).join(", ")+")";\n'
+  + '  var id="c"+(++_cc);\n'
+  + '  var card=document.createElement("div");card.className="fncard "+cls;card.dataset.kind=rd?"read":"write";\n'
+  + '  var hdr=document.createElement("div");hdr.className="fnhdr";\n'
+  + '  hdr.innerHTML=\'<span class="badge">\'+badge+\'</span><span class="fname">\'+fn.name+\'</span><span class="fsig">\'+sig+\'</span><span class="chev">&#9662;</span>\';\n'
+  + '  hdr.addEventListener("click",function(){card.classList.toggle("open");});\n'
+  + '  card.appendChild(hdr);\n'
+  + '  var body=document.createElement("div");body.className="fnbody";\n'
+  + '  var inner=document.createElement("div");inner.className="finner";\n'
+  + '  inp.forEach(function(p,i){\n'
+  + '    var ph=p.type==="address"?"0x\u2026":p.type==="bool"?"true / false":p.type.includes("[]")?"val1,val2,\u2026":"";\n'
+  + '    var g=document.createElement("div");g.className="pig";\n'
+  + '    var lbl=document.createElement("label");lbl.innerHTML=(p.name||"param"+i)+\'<span class="ptype">\'+p.type+"</span>";\n'
+  + '    var fi=document.createElement("input");fi.type="text";fi.id=id+"_a"+i;fi.placeholder=ph;fi.spellcheck=false;\n'
+  + '    g.appendChild(lbl);g.appendChild(fi);inner.appendChild(g);\n'
+  + '  });\n'
+  + '  if(py){\n'
+  + '    var pb=document.createElement("div");pb.className="pig paybox";\n'
+  + '    var pl=document.createElement("label");pl.textContent="\u2B21 ETH VALUE TO SEND";\n'
+  + '    var pi=document.createElement("input");pi.type="text";pi.id=id+"_v";pi.placeholder="0.0 (in ETH)";pi.spellcheck=false;\n'
+  + '    pb.appendChild(pl);pb.appendChild(pi);inner.appendChild(pb);\n'
+  + '  }\n'
+  + '  if(out.length){\n'
+  + '    var rh=document.createElement("div");rh.style.cssText="font-size:11px;color:var(--text-dimmer);font-family:var(--mono)";\n'
+  + '    rh.textContent="Returns: "+out.map(function(o){return o.type+(o.name?" "+o.name:"");}).join(", ");\n'
+  + '    inner.appendChild(rh);\n'
+  + '  }\n'
+  + '  var bl=rd?"\u25B6 Call":py?"\u2B21 Send ETH & Execute":"\u270E Execute";\n'
+  + '  var cb=document.createElement("button");cb.className="callbtn";cb.textContent=bl;cb.id=id+"_btn";\n'
+  + '  (function(fnName,ac,rf,pf,cid){cb.addEventListener("click",function(){callFn(cid,fnName,ac,rf,pf);});})(fn.name,inp.length,rd,py,id);\n'
+  + '  inner.appendChild(cb);\n'
+  + '  var rb=document.createElement("div");rb.className="result";rb.id=id+"_r";\n'
+  + '  inner.appendChild(rb);body.appendChild(inner);card.appendChild(body);\n'
+  + '  return card;\n'
+  + '}\n'
+  + 'async function callFn(id,fnName,argCount,readFlag,payFlag){\n'
+  + '  var rb=document.getElementById(id+"_r"),btn=document.getElementById(id+"_btn");\n'
+  + '  var args=[];\n'
+  + '  for(var i=0;i<argCount;i++){\n'
+  + '    var el=document.getElementById(id+"_a"+i);\n'
+  + '    var raw=gAbi.find(function(e){return e.name===fnName;});\n'
+  + '    var t=raw&&raw.inputs&&raw.inputs[i]?raw.inputs[i].type:"";\n'
+  + '    args.push(coerce(el?el.value.trim():"",t));\n'
+  + '  }\n'
+  + '  btn.disabled=true;btn.innerHTML=\'<span class="spin"></span>\'+(readFlag?"Calling\u2026":"Sending\u2026");\n'
+  + '  rb.className="result show loading";rb.innerHTML=\'<div class="rlabel">Working</div>\u23F3 Please wait\u2026\';\n'
+  + '  try{\n'
+  + '    if(!gContract)throw new Error("No contract loaded.");\n'
+  + '    if(readFlag){\n'
+  + '      var res=await gContract[fnName].apply(gContract,args);\n'
+  + '      rb.className="result show ok";rb.innerHTML=\'<div class="rlabel">Result</div>\'+fmt(res);\n'
+  + '    }else{\n'
+  + '      if(!gSigner)throw new Error("Connect your wallet first.");\n'
+  + '      var c2=gContract.connect(gSigner),opts={};\n'
+  + '      if(payFlag){var vEl=document.getElementById(id+"_v");opts.value=ethers.parseEther((vEl&&vEl.value.trim())||"0");}\n'
+  + '      var tx=await c2[fnName].apply(c2,args.concat([opts]));\n'
+  + '      rb.className="result show loading";rb.innerHTML=\'<div class="rlabel">Sent</div>\u{1F4E4} \'+tx.hash+\'<br>\u23F3 Awaiting confirmation\u2026\';\n'
+  + '      var rx=await tx.wait();\n'
+  + '      rb.className="result show ok";\n'
+  + '      rb.innerHTML=\'<div class="rlabel">Confirmed \u2713</div>Block: \'+rx.blockNumber+\' &nbsp;&middot;&nbsp; Gas: \'+rx.gasUsed.toString()+\'<br>Hash: \'+tx.hash+\'<br><a class="txlink" href="https://sepolia.etherscan.io/tx/\'+tx.hash+\'" target="_blank">View on Etherscan &#8599;</a>\';\n'
+  + '    }\n'
+  + '  }catch(e){\n'
+  + '    rb.className="result show err";rb.innerHTML=\'<div class="rlabel">Error</div>\u274C \'+esc(e.reason||e.shortMessage||e.message||String(e));\n'
+  + '  }finally{\n'
+  + '    btn.disabled=false;btn.textContent=readFlag?"\u25B6 Call":payFlag?"\u2B21 Send ETH & Execute":"\u270E Execute";\n'
+  + '  }\n'
+  + '}\n'
+  + 'function coerce(v,t){if(!t)return v;if(t==="bool")return v.toLowerCase()==="true";if(t.endsWith("[]"))return v.split(",").map(function(x){return coerce(x.trim(),t.slice(0,-2));});if(/^u?int/.test(t))return v===""?BigInt(0):BigInt(v);return v;}\n'
+  + 'function fmt(r){if(r===null||r===undefined)return"null";if(typeof r==="bigint")return r.toString();if(typeof r==="boolean")return r?"\u2713 true":"\u2717 false";if(typeof r==="string")return esc(r);if(Array.isArray(r)||(r&&typeof r==="object"&&r[Symbol.iterator]))return"["+Array.from(r).map(fmt).join(", ")+"]";return esc(String(r));}\n'
+  + 'function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}\n'
+  + 'function filterFns(type,tab){document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("on");});tab.classList.add("on");document.querySelectorAll(".fncard").forEach(function(c){c.style.display=(type==="all"||c.dataset.kind===type)?"":"none";});}\n'
+  + 'var _tt;\n'
+  + 'function toast(msg,type){var el=document.getElementById("toast");el.textContent=msg;el.className="show "+(type||"info");clearTimeout(_tt);_tt=setTimeout(function(){el.className=(type||"info");},4000);}\n'
+  + 'window.addEventListener("DOMContentLoaded",function(){\n'
+  + '  var fns=gAbi.filter(function(e){return e.type==="function";});\n'
+  + '  var rFns=fns.filter(function(f){return f.stateMutability==="view"||f.stateMutability==="pure";});\n'
+  + '  var wFns=fns.filter(function(f){return f.stateMutability!=="view"&&f.stateMutability!=="pure";});\n'
+  + '  document.getElementById("cAll").textContent=fns.length;\n'
+  + '  document.getElementById("cRead").textContent=rFns.length;\n'
+  + '  document.getElementById("cWrite").textContent=wFns.length;\n'
+  + '  document.getElementById("daddr").textContent=gAddr;\n'
+  + '  var list=document.getElementById("fnlist");list.innerHTML="";\n'
+  + '  fns.length?fns.forEach(function(fn){list.appendChild(makeCard(fn));}):(list.innerHTML=\'<div style="text-align:center;padding:36px;color:var(--text-dimmer);font-family:var(--mono)">No functions found.</div>\');\n'
+  + '  try{gContract=new ethers.Contract(gAddr,gAbi,new ethers.JsonRpcProvider("https://rpc.sepolia.org"));}catch(e){}\n'
+  + '  toast("Connect your wallet to interact with this contract.","info");\n'
+  + '});\n';
 }
 </script>
 </body>
