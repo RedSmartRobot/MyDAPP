@@ -512,7 +512,9 @@ async function saveFile() {
   try {
     var r = await fetch('https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js');
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    ethersCode = await r.text();
+    // Must escape any </script> inside the fetched code or the HTML parser
+    // will end the <script> tag early, causing a syntax error on that line.
+    ethersCode = (await r.text()).replace(/<\/script>/gi, '<\\/script>');
   } catch(e) {
     toast('Could not fetch ethers.js — file needs internet to work', 'err');
   }
